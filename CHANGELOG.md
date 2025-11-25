@@ -5,6 +5,75 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.0] - 2024
+
+### 新增功能
+
+#### 📦 ZIP文件夹导出（重大改进）
+- ✨ 根据URL路径自动创建文件夹结构
+- 📁 每个页面保存为独立的HTML和TXT文件
+- 🗜️ 所有文件打包成一个ZIP文件下载
+- 📋 自动生成INDEX.md索引文件
+- 🏷️ 在HTML文件中保存源URL和抓取时间
+
+#### 🎯 简化内容提取
+- ✂️ 简化`extractPageContent()`函数
+- 📄 只提取innerHTML（完整HTML内容）
+- 📝 只提取textContent（纯文本内容）
+- 🚀 提高处理速度和效率
+- 💾 减少内存占用
+
+#### 🗂️ 智能文件路径生成
+- 🔗 基于URL路径生成安全的文件路径
+- 🛡️ 自动过滤不安全字符
+- 📂 支持多层级文件夹结构
+- 🏠 自动处理根路径和index页面
+- 🔄 移除文件扩展名避免冲突
+
+### 改进
+
+#### 用户界面
+- 🎨 新增"导出ZIP（推荐）"按钮
+- 🗑️ 移除Markdown和CSV导出（简化功能）
+- 📊 保留JSON导出用于调试
+- 💡 更清晰的按钮标注
+
+#### 代码优化
+- 🏗️ 新增`generateSafePath()`辅助函数
+- 🔧 重构`exportToZip()`函数
+- ⚡ 优化页面内容提取逻辑
+- 📦 改进ZIP压缩配置
+
+### 技术细节
+
+#### 新增函数
+- `generateSafePath(url)` - 生成安全的文件路径
+- `exportToZip()` - 导出为ZIP文件
+
+#### 文件结构示例
+```
+example-com-1234567890.zip
+└── example-com/
+    ├── INDEX.md
+    ├── index.html
+    ├── index.txt
+    ├── guide/
+    │   ├── getting-started.html
+    │   ├── getting-started.txt
+    │   ├── installation.html
+    │   └── installation.txt
+    └── api/
+        └── reference/
+            ├── methods.html
+            └── methods.txt
+```
+
+### 破坏性变更
+- ⚠️ 移除了`content.headings`、`content.codeBlocks`、`content.tables`和`content.xpathResults`
+- ⚠️ `content.html` 重命名为 `content.innerHTML`
+- ⚠️ `content.text` 重命名为 `content.textContent`
+- ⚠️ 移除了Markdown和CSV导出功能
+
 ## [1.1.0] - 2024
 
 ### 新增功能
