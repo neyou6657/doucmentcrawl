@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>元素选择器功能演示</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: #f5f5f5;
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar h3 {
+            margin-top: 0;
+        }
+        
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .sidebar li {
+            margin: 10px 0;
+        }
+        
+        .sidebar a {
+            color: #2196F3;
+            text-decoration: none;
+        }
+        
+        .sidebar a:hover {
+            text-decoration: underline;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 40px;
+        }
+        
+        .demo-section {
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .highlight-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        
+        .feature-list li:before {
+            content: "✓ ";
+            color: #4CAF50;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 - 这是链接区域 -->
+    <div class="sidebar">
+        <h3>📚 文档导航</h3>
+        <ul>
+            <li><a href="#intro">快速开始</a></li>
+            <li><a href="#installation">安装指南</a></li>
+            <li><a href="#usage">使用方法</a></li>
+            <li><a href="#api">API 文档</a></li>
+            <li><a href="#examples">示例代码</a></li>
+            <li><a href="#faq">常见问题</a></li>
+        </ul>
+        
+        <h3>🔧 配置</h3>
+        <ul>
+            <li><a href="#config-basic">基础配置</a></li>
+            <li><a href="#config-advanced">高级配置</a></li>
+            <li><a href="#config-custom">自定义配置</a></li>
+        </ul>
+        
+        <h3>📖 教程</h3>
+        <ul>
+            <li><a href="#tutorial-1">教程 1: 入门</a></li>
+            <li><a href="#tutorial-2">教程 2: 进阶</a></li>
+            <li><a href="#tutorial-3">教程 3: 高级</a></li>
+        </ul>
+    </div>
+    
+    <!-- 主内容区域 - 这是文本内容区域 -->
+    <div class="main-content">
+        <h1>🎯 元素选择器功能演示</h1>
+        
+        <div class="demo-section">
+            <h2>欢迎使用新的元素选择器功能！</h2>
+            <p>
+                这个功能让你可以像使用浏览器开发者工具一样，直接用鼠标点击选择页面上的元素。
+                不再需要手动输入复杂的 CSS 选择器了！
+            </p>
+            
+            <div class="highlight-box">
+                <strong>🚀 使用步骤：</strong>
+                <ol>
+                    <li>点击控制面板中的 <code>🎯 选择链接区域</code> 按钮</li>
+                    <li>移动鼠标到左侧边栏（会看到橙色高亮）</li>
+                    <li>点击侧边栏区域</li>
+                    <li>点击 <code>🎯 选择内容区域</code> 按钮</li>
+                    <li>移动鼠标到主内容区并点击</li>
+                    <li>现在可以点击 <code>扫描链接</code> 开始工作了！</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>✨ 主要特性</h2>
+            <ul class="feature-list">
+                <li><strong>可视化选择：</strong>像开发者工具一样，鼠标悬停时实时高亮元素</li>
+                <li><strong>智能识别：</strong>自动生成最优的 CSS 选择器</li>
+                <li><strong>即时反馈：</strong>显示将会匹配的链接数量</li>
+                <li><strong>简单易用：</strong>无需了解 CSS 选择器语法</li>
+                <li><strong>快捷操作：</strong>按 ESC 键可随时取消选择</li>
+            </ul>
+        </div>
+        
+        <div class="demo-section">
+            <h2>📝 工作原理</h2>
+            <p>
+                当你点击"选择链接区域"按钮后：
+            </p>
+            <ol>
+                <li>页面会出现一个半透明遮罩层</li>
+                <li>移动鼠标时，当前元素会被橙色边框高亮</li>
+                <li>屏幕上方会显示一个黑色提示框，显示元素信息和将使用的选择器</li>
+                <li>点击元素后，工具会自动生成选择器（例如：<code>.sidebar a</code>）</li>
+                <li>弹出提示显示找到了多少个链接</li>
+            </ol>
+            
+            <div class="highlight-box">
+                <strong>💡 提示：</strong>
+                <ul>
+                    <li>选择链接区域时，尽量选择包含所有导航链接的容器元素（如侧边栏、导航栏）</li>
+                    <li>选择内容区域时，选择主要的文章或文档内容区域</li>
+                    <li>如果第一次选择不满意，可以重新选择，新的选择会覆盖旧的</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>🎨 视觉效果</h2>
+            <p>
+                选择模式下你会看到：
+            </p>
+            <ul>
+                <li><strong>橙色高亮边框：</strong>当前鼠标悬停的元素</li>
+                <li><strong>黑色提示框：</strong>显示元素标签名、类名和生成的选择器</li>
+                <li><strong>屏幕中央提示：</strong>提示你当前正在选择什么（3秒后自动消失）</li>
+                <li><strong>十字光标：</strong>鼠标光标变为十字，表示处于选择模式</li>
+            </ul>
+        </div>
+        
+        <div class="demo-section">
+            <h2>🔍 智能选择器生成</h2>
+            <p>
+                工具会尝试生成最简洁有效的选择器，优先级如下：
+            </p>
+            <ol>
+                <li>ID 选择器（如果元素有唯一 ID）</li>
+                <li>类选择器（如果类名唯一）</li>
+                <li>标签+类选择器</li>
+                <li>属性选择器（role、data-* 等）</li>
+                <li>路径选择器（作为后备方案）</li>
+            </ol>
+            
+            <p>
+                选择链接区域时，会自动在选择器后面加上 <code> a</code>，
+                这样就能直接选中该区域内的所有链接了！
+            </p>
+        </div>
+        
+        <div class="demo-section">
+            <h2>🎓 示例场景</h2>
+            <p><strong>场景 1：文档网站</strong></p>
+            <ul>
+                <li>链接区域：选择左侧侧边栏 → 生成 <code>.sidebar a</code></li>
+                <li>内容区域：选择主内容区 → 生成 <code>.main-content</code></li>
+            </ul>
+            
+            <p><strong>场景 2：博客网站</strong></p>
+            <ul>
+                <li>链接区域：选择导航菜单 → 生成 <code>nav a</code></li>
+                <li>内容区域：选择文章内容 → 生成 <code>article</code></li>
+            </ul>
+            
+            <p><strong>场景 3：API 文档</strong></p>
+            <ul>
+                <li>链接区域：选择 API 目录 → 生成 <code>.toc a</code></li>
+                <li>内容区域：选择 API 描述区 → 生成 <code>.api-doc</code></li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // 这里会加载 Tampermonkey 脚本
+        // 在实际使用中，脚本会自动注入到页面
+        console.log('💡 提示：在实际使用中，请安装 Tampermonkey 扩展并添加脚本。');
+        console.log('📝 然后刷新页面，右上角会出现控制面板。');
+    </script>
+</body>
+</html>
