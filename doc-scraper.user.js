@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         开发者文档爬取工具
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
-// @description  自动爬取网页开发者文档，扫描左侧链接并根据XPath保存内容
+// @version      1.1.0
+// @description  自动爬取网页开发者文档，支持可视化元素选择器，扫描左侧链接并根据XPath保存内容
 // @author       You
 // @match        *://*/*
 // @grant        GM_download
@@ -50,7 +50,10 @@
         // 延迟时间（毫秒）
         delayBetweenRequests: 1000,
         // 最大并发数
-        maxConcurrent: 3
+        maxConcurrent: 3,
+        // 用户手动选择的选择器
+        customLinkSelector: null,
+        customContentSelector: null
     };
 
     // 数据存储
@@ -91,6 +94,15 @@
 
     // 工具函数：查找左侧导航栏
     function findLeftNavigation() {
+        // 优先使用用户自定义的选择器
+        if (config.customLinkSelector) {
+            const elements = document.querySelectorAll(config.customLinkSelector);
+            if (elements.length > 0) {
+                console.log(`使用自定义链接选择器: ${config.customLinkSelector}`);
+                return elements;
+            }
+        }
+        
         for (const selector of config.leftNavSelectors) {
             const elements = document.querySelectorAll(selector);
             if (elements.length > 5) { // 假设导航至少有5个链接
@@ -103,6 +115,15 @@
 
     // 工具函数：查找内容区域
     function findContentArea() {
+        // 优先使用用户自定义的选择器
+        if (config.customContentSelector) {
+            const element = document.querySelector(config.customContentSelector);
+            if (element) {
+                console.log(`使用自定义内容选择器: ${config.customContentSelector}`);
+                return element;
+            }
+        }
+        
         for (const selector of config.contentSelectors) {
             const element = document.querySelector(selector);
             if (element) {
@@ -357,6 +378,364 @@
         }
     }
 
+    // 元素选择器功能
+    let elementPickerState = {
+        active: false,
+        mode: null, // 'link' or 'content'
+        overlay: null,
+        tooltip: null,
+        highlightedElement: null,
+        originalOutline: null
+    };
+
+    // 生成CSS选择器
+    function generateSelector(element) {
+        if (!element || element === document.body) {
+            return 'body';
+        }
+
+        // 如果有ID，优先使用ID
+        if (element.id) {
+            return `#${element.id}`;
+        }
+
+        // 如果有唯一的class
+        if (element.className && typeof element.className === 'string') {
+            const classes = element.className.trim().split(/\s+/).filter(c => c);
+            if (classes.length > 0) {
+                const selector = `.${classes.join('.')}`;
+                if (document.querySelectorAll(selector).length === 1) {
+                    return selector;
+                }
+            }
+        }
+
+        // 构建路径选择器
+        const path = [];
+        let current = element;
+        
+        while (current && current !== document.body) {
+            let selector = current.tagName.toLowerCase();
+            
+            // 添加nth-child
+            if (current.parentElement) {
+                const siblings = Array.from(current.parentElement.children);
+                const index = siblings.indexOf(current) + 1;
+                selector += `:nth-child(${index})`;
+            }
+            
+            path.unshift(selector);
+            current = current.parentElement;
+            
+            // 限制深度
+            if (path.length >= 5) {
+                break;
+            }
+        }
+        
+        return path.join(' > ');
+    }
+
+    // 改进的选择器生成 - 尝试找到更简洁的选择器
+    function generateBestSelector(element) {
+        if (!element) return null;
+
+        const selectors = [];
+
+        // 1. ID选择器
+        if (element.id) {
+            selectors.push(`#${element.id}`);
+        }
+
+        // 2. 类选择器组合
+        if (element.className && typeof element.className === 'string') {
+            const classes = element.className.trim().split(/\s+/).filter(c => c && !c.match(/^(hover|active|focus)/));
+            if (classes.length > 0 && classes.length <= 3) {
+                selectors.push(`.${classes.join('.')}`);
+            }
+        }
+
+        // 3. 标签+类选择器
+        if (element.className && typeof element.className === 'string') {
+            const classes = element.className.trim().split(/\s+/).filter(c => c && !c.match(/^(hover|active|focus)/));
+            if (classes.length > 0) {
+                selectors.push(`${element.tagName.toLowerCase()}.${classes[0]}`);
+            }
+        }
+
+        // 4. 属性选择器
+        const attrs = ['role', 'data-testid', 'data-id', 'aria-label'];
+        for (const attr of attrs) {
+            if (element.hasAttribute(attr)) {
+                selectors.push(`[${attr}="${element.getAttribute(attr)}"]`);
+            }
+        }
+
+        // 测试每个选择器
+        for (const sel of selectors) {
+            try {
+                const matches = document.querySelectorAll(sel);
+                if (matches.length === 1 && matches[0] === element) {
+                    return sel;
+                }
+                // 如果匹配多个，但都是同类元素，也可以接受
+                if (matches.length > 1 && matches.length < 20) {
+                    return sel;
+                }
+            } catch (e) {
+                // 选择器无效，跳过
+            }
+        }
+
+        // 如果没有找到简洁的选择器，使用路径选择器
+        return generateSelector(element);
+    }
+
+    // 高亮元素
+    function highlightElement(element) {
+        if (!element || element === elementPickerState.highlightedElement) {
+            return;
+        }
+
+        // 移除之前的高亮
+        if (elementPickerState.highlightedElement) {
+            elementPickerState.highlightedElement.style.outline = elementPickerState.originalOutline || '';
+        }
+
+        // 添加新的高亮
+        elementPickerState.highlightedElement = element;
+        elementPickerState.originalOutline = element.style.outline;
+        element.style.outline = '2px solid #ff5722';
+        element.style.outlineOffset = '2px';
+
+        // 更新tooltip
+        updateTooltip(element);
+    }
+
+    // 更新提示框
+    function updateTooltip(element) {
+        if (!elementPickerState.tooltip) return;
+
+        const rect = element.getBoundingClientRect();
+        const selector = generateBestSelector(element);
+        const tagName = element.tagName.toLowerCase();
+        const className = element.className ? ` class="${element.className}"` : '';
+        const id = element.id ? ` id="${element.id}"` : '';
+
+        elementPickerState.tooltip.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 5px;">
+                &lt;${tagName}${id}${className}&gt;
+            </div>
+            <div style="font-size: 11px; color: #666;">
+                选择器: ${selector}
+            </div>
+        `;
+
+        // 定位tooltip
+        const tooltipX = Math.min(rect.left + window.scrollX, window.innerWidth - 300);
+        const tooltipY = rect.top + window.scrollY - 60;
+
+        elementPickerState.tooltip.style.left = tooltipX + 'px';
+        elementPickerState.tooltip.style.top = Math.max(10, tooltipY) + 'px';
+    }
+
+    // 开始元素选择
+    function startElementPicker(mode) {
+        if (elementPickerState.active) {
+            stopElementPicker();
+        }
+
+        elementPickerState.active = true;
+        elementPickerState.mode = mode;
+
+        // 创建遮罩层
+        const overlay = document.createElement('div');
+        overlay.id = 'element-picker-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.1);
+            z-index: 999998;
+            cursor: crosshair;
+        `;
+        document.body.appendChild(overlay);
+        elementPickerState.overlay = overlay;
+
+        // 创建提示框
+        const tooltip = document.createElement('div');
+        tooltip.id = 'element-picker-tooltip';
+        tooltip.style.cssText = `
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000000;
+            max-width: 400px;
+            word-break: break-all;
+        `;
+        document.body.appendChild(tooltip);
+        elementPickerState.tooltip = tooltip;
+
+        // 创建提示信息
+        const hint = document.createElement('div');
+        hint.id = 'element-picker-hint';
+        hint.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            z-index: 1000001;
+            pointer-events: none;
+        `;
+        hint.textContent = mode === 'link' 
+            ? '请点击包含链接的区域（如侧边栏、导航栏）' 
+            : '请点击包含文档内容的区域（如文章、主内容区）';
+        document.body.appendChild(hint);
+        
+        // 3秒后隐藏提示
+        setTimeout(() => {
+            if (hint.parentElement) {
+                hint.remove();
+            }
+        }, 3000);
+
+        // 监听鼠标移动
+        overlay.addEventListener('mousemove', handleMouseMove);
+        overlay.addEventListener('click', handleClick);
+        
+        // ESC键取消
+        document.addEventListener('keydown', handleKeyDown);
+
+        console.log(`开始选择${mode === 'link' ? '链接' : '内容'}区域，按ESC取消`);
+    }
+
+    // 处理鼠标移动
+    function handleMouseMove(e) {
+        e.stopPropagation();
+        
+        // 获取鼠标下的元素（忽略遮罩层）
+        elementPickerState.overlay.style.pointerEvents = 'none';
+        const element = document.elementFromPoint(e.clientX, e.clientY);
+        elementPickerState.overlay.style.pointerEvents = 'auto';
+
+        if (element && 
+            element !== elementPickerState.overlay && 
+            element !== elementPickerState.tooltip &&
+            !element.closest('#doc-scraper-panel')) {
+            highlightElement(element);
+        }
+    }
+
+    // 处理点击
+    function handleClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!elementPickerState.highlightedElement) {
+            return;
+        }
+
+        const element = elementPickerState.highlightedElement;
+        const selector = generateBestSelector(element);
+        const mode = elementPickerState.mode;
+
+        console.log(`选择了${mode === 'link' ? '链接' : '内容'}区域:`, selector);
+
+        // 保存选择器
+        if (mode === 'link') {
+            config.customLinkSelector = selector + ' a';
+            // 显示找到的链接数量
+            const links = document.querySelectorAll(config.customLinkSelector);
+            alert(`✅ 已选择链接区域！\n\n选择器: ${config.customLinkSelector}\n找到 ${links.length} 个链接\n\n现在可以点击"扫描链接"按钮了。`);
+        } else {
+            config.customContentSelector = selector;
+            const contentEl = document.querySelector(config.customContentSelector);
+            alert(`✅ 已选择内容区域！\n\n选择器: ${config.customContentSelector}\n\n这个选择器将用于提取页面内容。`);
+        }
+
+        // 更新UI显示
+        updateSelectorDisplay();
+
+        stopElementPicker();
+    }
+
+    // 处理键盘事件
+    function handleKeyDown(e) {
+        if (e.key === 'Escape') {
+            console.log('取消元素选择');
+            stopElementPicker();
+        }
+    }
+
+    // 停止元素选择
+    function stopElementPicker() {
+        if (!elementPickerState.active) return;
+
+        // 移除高亮
+        if (elementPickerState.highlightedElement) {
+            elementPickerState.highlightedElement.style.outline = elementPickerState.originalOutline || '';
+        }
+
+        // 移除遮罩层和提示框
+        if (elementPickerState.overlay) {
+            elementPickerState.overlay.remove();
+        }
+        if (elementPickerState.tooltip) {
+            elementPickerState.tooltip.remove();
+        }
+
+        // 移除提示信息
+        const hint = document.getElementById('element-picker-hint');
+        if (hint) {
+            hint.remove();
+        }
+
+        // 移除事件监听
+        document.removeEventListener('keydown', handleKeyDown);
+
+        // 重置状态
+        elementPickerState = {
+            active: false,
+            mode: null,
+            overlay: null,
+            tooltip: null,
+            highlightedElement: null,
+            originalOutline: null
+        };
+    }
+
+    // 更新选择器显示
+    function updateSelectorDisplay() {
+        const infoEl = document.getElementById('selector-info');
+        if (!infoEl) return;
+
+        let html = '<div style="font-size: 11px; color: #666; margin-top: 5px;">';
+        
+        if (config.customLinkSelector) {
+            const linkCount = document.querySelectorAll(config.customLinkSelector).length;
+            html += `<div style="margin-bottom: 5px;"><strong>链接选择器:</strong><br>${config.customLinkSelector}<br>(${linkCount} 个链接)</div>`;
+        }
+        
+        if (config.customContentSelector) {
+            html += `<div><strong>内容选择器:</strong><br>${config.customContentSelector}</div>`;
+        }
+        
+        html += '</div>';
+        infoEl.innerHTML = html;
+    }
+
     // 导出数据为JSON
     function exportToJSON() {
         const dataStr = JSON.stringify(scrapedData, null, 2);
@@ -487,6 +866,18 @@
             </div>
             
             <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0; color: #555;">手动选择区域</h4>
+                <button id="pick-link-area" style="width: 100%; margin: 5px 0; padding: 10px; background: #E91E63; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                    🎯 选择链接区域
+                </button>
+                <button id="pick-content-area" style="width: 100%; margin: 5px 0; padding: 10px; background: #673AB7; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                    🎯 选择内容区域
+                </button>
+                <div id="selector-info" style="font-size: 11px; color: #666; margin-top: 5px; min-height: 20px;">
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
                 <h4 style="margin: 10px 0; color: #555;">操作</h4>
                 <button id="scan-links" style="width: 100%; margin: 5px 0; padding: 10px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">
                     1. 扫描链接
@@ -525,6 +916,15 @@
         // 绑定事件
         document.getElementById('close-panel').addEventListener('click', () => {
             panel.style.display = 'none';
+        });
+        
+        // 元素选择按钮
+        document.getElementById('pick-link-area').addEventListener('click', () => {
+            startElementPicker('link');
+        });
+        
+        document.getElementById('pick-content-area').addEventListener('click', () => {
+            startElementPicker('content');
         });
         
         document.getElementById('scan-links').addEventListener('click', () => {

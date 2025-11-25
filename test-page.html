@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试页面 - 元素选择器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+        
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            padding: 20px;
+            color: white;
+            overflow-y: auto;
+        }
+        
+        .sidebar h2 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #ecf0f1;
+        }
+        
+        .nav-section {
+            margin-bottom: 25px;
+        }
+        
+        .sidebar ul {
+            list-style: none;
+        }
+        
+        .sidebar li {
+            margin: 8px 0;
+        }
+        
+        .sidebar a {
+            color: #3498db;
+            text-decoration: none;
+            display: block;
+            padding: 8px 10px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar a:hover {
+            background: rgba(52, 152, 219, 0.2);
+            padding-left: 15px;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            background: #ecf0f1;
+        }
+        
+        .content-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        h2 {
+            color: #34495e;
+            margin: 30px 0 15px;
+        }
+        
+        p {
+            line-height: 1.8;
+            color: #555;
+            margin-bottom: 15px;
+        }
+        
+        .highlight {
+            background: #fff9e6;
+            border-left: 4px solid #f39c12;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #c7254e;
+        }
+        
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        
+        .instruction-box {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+        
+        .instruction-box h3 {
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+        
+        .step {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .step strong {
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <!-- 左侧导航栏 -->
+    <nav class="sidebar">
+        <div class="nav-section">
+            <h2>📚 入门指南</h2>
+            <ul>
+                <li><a href="#intro">项目简介</a></li>
+                <li><a href="#install">安装方法</a></li>
+                <li><a href="#quickstart">快速开始</a></li>
+                <li><a href="#config">基础配置</a></li>
+            </ul>
+        </div>
+        
+        <div class="nav-section">
+            <h2>🔧 核心功能</h2>
+            <ul>
+                <li><a href="#element-picker">元素选择器</a></li>
+                <li><a href="#link-scanner">链接扫描</a></li>
+                <li><a href="#content-extract">内容提取</a></li>
+                <li><a href="#export">数据导出</a></li>
+            </ul>
+        </div>
+        
+        <div class="nav-section">
+            <h2>📖 API 文档</h2>
+            <ul>
+                <li><a href="#api-config">配置 API</a></li>
+                <li><a href="#api-scraper">爬取 API</a></li>
+                <li><a href="#api-export">导出 API</a></li>
+                <li><a href="#api-utils">工具函数</a></li>
+            </ul>
+        </div>
+        
+        <div class="nav-section">
+            <h2>💡 高级用法</h2>
+            <ul>
+                <li><a href="#advanced-selectors">自定义选择器</a></li>
+                <li><a href="#advanced-xpath">XPath 查询</a></li>
+                <li><a href="#advanced-filters">内容过滤</a></li>
+                <li><a href="#advanced-plugins">插件系统</a></li>
+            </ul>
+        </div>
+        
+        <div class="nav-section">
+            <h2>❓ 帮助</h2>
+            <ul>
+                <li><a href="#faq">常见问题</a></li>
+                <li><a href="#troubleshooting">故障排除</a></li>
+                <li><a href="#support">技术支持</a></li>
+                <li><a href="#changelog">更新日志</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <div class="content-wrapper">
+            <h1>🎯 元素选择器测试页面</h1>
+            
+            <div class="instruction-box">
+                <h3>🚀 如何测试元素选择器</h3>
+                <div class="step">
+                    <strong>步骤 1：</strong> 安装 Tampermonkey 扩展并添加 <code>doc-scraper.user.js</code> 脚本
+                </div>
+                <div class="step">
+                    <strong>步骤 2：</strong> 刷新此页面，右上角应该出现控制面板
+                </div>
+                <div class="step">
+                    <strong>步骤 3：</strong> 点击 <code>🎯 选择链接区域</code> 按钮
+                </div>
+                <div class="step">
+                    <strong>步骤 4：</strong> 移动鼠标到左侧导航栏（会看到橙色高亮）
+                </div>
+                <div class="step">
+                    <strong>步骤 5：</strong> 点击左侧导航栏区域
+                </div>
+                <div class="step">
+                    <strong>步骤 6：</strong> 点击 <code>🎯 选择内容区域</code> 按钮
+                </div>
+                <div class="step">
+                    <strong>步骤 7：</strong> 点击这个白色的内容区域
+                </div>
+                <div class="step">
+                    <strong>步骤 8：</strong> 点击 <code>扫描链接</code> 按钮查看结果
+                </div>
+            </div>
+            
+            <h2>📝 预期结果</h2>
+            <p>
+                当你选择左侧导航栏时，脚本应该生成类似 <code>.sidebar a</code> 或 <code>nav.sidebar a</code> 的选择器，
+                并显示找到约 <strong>20 个链接</strong>。
+            </p>
+            
+            <div class="highlight">
+                <strong>💡 提示：</strong> 
+                如果你看不到控制面板，请确保：
+                <ul style="margin-top: 10px;">
+                    <li>✓ Tampermonkey 扩展已安装并启用</li>
+                    <li>✓ 脚本已正确安装并启用</li>
+                    <li>✓ 页面已刷新</li>
+                </ul>
+            </div>
+            
+            <h2>🎨 视觉反馈说明</h2>
+            <p>在选择模式下，你应该能看到：</p>
+            <ul style="line-height: 2; color: #555;">
+                <li><strong style="color: #ff5722;">橙色边框</strong> - 当前鼠标悬停的元素</li>
+                <li><strong>黑色提示框</strong> - 显示在页面顶部，包含元素信息和选择器</li>
+                <li><strong>屏幕中央提示</strong> - 告诉你当前在做什么（3秒后消失）</li>
+                <li><strong>十字光标</strong> - 鼠标光标变为十字形状</li>
+            </ul>
+            
+            <h2>🔍 选择器示例</h2>
+            <p>以下是在此页面上可能生成的选择器：</p>
+            <pre><code>// 链接区域
+.sidebar a         ← 最可能生成这个
+nav.sidebar a      ← 或者这个
+
+// 内容区域
+.main-content      ← 最可能生成这个
+.content-wrapper   ← 或者这个
+main              ← 或者这个</code></pre>
+            
+            <h2>✅ 测试检查清单</h2>
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <p style="margin: 10px 0;"><input type="checkbox"> 控制面板出现在右上角</p>
+                <p style="margin: 10px 0;"><input type="checkbox"> 点击选择按钮后页面出现遮罩</p>
+                <p style="margin: 10px 0;"><input type="checkbox"> 鼠标悬停时元素显示橙色边框</p>
+                <p style="margin: 10px 0;"><input type="checkbox"> 黑色提示框显示元素信息</p>
+                <p style="margin: 10px 0;"><input type="checkbox"> 点击元素后显示确认提示</p>
+                <p style="margin: 10px 0;"><input type="checkbox"> 提示显示找到的链接数量</p>
+                <p style="margin: 10px 0;"><input type="checkbox"> 按 ESC 可以取消选择</p>
+                <p style="margin: 10px 0;"><input type="checkbox"> 扫描链接功能正常工作</p>
+            </div>
+            
+            <h2>🐛 遇到问题？</h2>
+            <p>如果遇到任何问题，请：</p>
+            <ol style="line-height: 2; color: #555;">
+                <li>打开浏览器控制台（F12）查看错误信息</li>
+                <li>确认脚本版本是 <code>1.1.0</code> 或更高</li>
+                <li>尝试在其他网站上测试（如 GitHub、MDN）</li>
+                <li>查看 <code>ELEMENT_PICKER_GUIDE.md</code> 详细文档</li>
+            </ol>
+            
+            <div class="highlight" style="margin-top: 30px;">
+                <strong>🎉 完成测试后：</strong><br>
+                恭喜！你已经掌握了元素选择器的使用方法。现在可以在任何文档网站上使用这个功能了！
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        console.log('%c🎯 元素选择器测试页面', 'font-size: 20px; color: #3498db; font-weight: bold;');
+        console.log('%c左侧有 ' + document.querySelectorAll('.sidebar a').length + ' 个链接', 'color: #27ae60;');
+        console.log('%c提示：安装脚本后刷新页面即可开始测试', 'color: #e67e22;');
+    </script>
+</body>
+</html>

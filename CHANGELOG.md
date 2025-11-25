@@ -5,6 +5,79 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.1.0] - 2024
+
+### 新增功能
+
+#### 🎯 可视化元素选择器
+- ✨ 类似 Chrome DevTools 的元素选择功能
+- 🖱️ 鼠标悬停时实时高亮元素（橙色边框）
+- 🎨 黑色提示框显示元素信息和选择器
+- 🔍 智能选择器生成算法
+- ⌨️ 支持 ESC 键取消选择
+- 📊 即时显示将匹配的链接数量
+- 🎯 分别选择链接区域和内容区域
+- 💡 屏幕中央显示操作提示（3秒后消失）
+
+#### 选择器生成优化
+- 🏆 优先使用 ID 选择器（最高优先级）
+- 🎨 智能类选择器组合
+- 🔤 标签+类选择器
+- 🏷️ 属性选择器（role、data-* 等）
+- 🛤️ 路径选择器作为后备方案
+- 🔗 自动为链接区域添加 ` a` 后缀
+- 🚫 过滤动态状态类（hover、active、focus）
+
+#### 用户体验改进
+- 🎨 新增"手动选择区域"部分在控制面板
+- 🎯 两个醒目的选择按钮（粉色和紫色）
+- 📝 实时显示当前选中的选择器
+- ✅ 选择后立即显示确认提示
+- 🔄 支持重复选择（新选择覆盖旧选择）
+- 🚫 自动忽略控制面板本身
+- 📖 详细的使用指南文档
+
+#### 文档更新
+- 📚 新增 `ELEMENT_PICKER_GUIDE.md` 详细使用指南
+- 🎨 新增 `demo.html` 交互式演示页面
+- 📖 更新 README.md 添加新功能说明
+- 💡 添加使用技巧和最佳实践
+- ❌ 添加常见问题解答
+
+### 改进
+
+#### 代码结构
+- 🏗️ 新增 `elementPickerState` 状态管理
+- 🎯 模块化的选择器生成函数
+- 🎨 优化高亮和提示框逻辑
+- 🧹 清理事件监听器机制
+
+#### 配置系统
+- ⚙️ 新增 `customLinkSelector` 配置项
+- ⚙️ 新增 `customContentSelector` 配置项
+- 🔄 优先使用用户自定义选择器
+- 📝 配置项文档完善
+
+### 技术细节
+
+#### 新增函数
+- `startElementPicker(mode)` - 开始元素选择
+- `stopElementPicker()` - 停止元素选择
+- `generateBestSelector(element)` - 智能选择器生成
+- `generateSelector(element)` - 路径选择器生成
+- `highlightElement(element)` - 高亮元素
+- `updateTooltip(element)` - 更新提示框
+- `handleMouseMove(e)` - 处理鼠标移动
+- `handleClick(e)` - 处理点击事件
+- `handleKeyDown(e)` - 处理键盘事件
+- `updateSelectorDisplay()` - 更新选择器显示
+
+#### 事件处理
+- 鼠标移动事件监听
+- 点击事件捕获
+- ESC 键取消功能
+- 动态元素创建和清理
+
 ## [1.0.0] - 2024
 
 ### 新增功能
