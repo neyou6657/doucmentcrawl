@@ -1,0 +1,55 @@
+{
+  "name": "doc-scraper-userscript",
+  "version": "1.0.0",
+  "description": "一个功能强大的Tampermonkey脚本，用于自动爬取网页开发者文档，支持左侧链接扫描、自动分类和基于XPath的内容提取",
+  "main": "doc-scraper.user.js",
+  "scripts": {
+    "lint": "echo 'No linting configured yet'",
+    "format": "echo 'No formatting configured yet'",
+    "build": "echo 'No build step required for userscript'"
+  },
+  "keywords": [
+    "tampermonkey",
+    "userscript",
+    "scraper",
+    "documentation",
+    "web-scraping",
+    "crawler",
+    "xpath",
+    "content-extraction",
+    "developer-tools",
+    "browser-extension"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/doc-scraper"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/doc-scraper/issues"
+  },
+  "homepage": "https://github.com/yourusername/doc-scraper#readme",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "tampermonkey": {
+    "name": "开发者文档爬取工具",
+    "namespace": "http://tampermonkey.net/",
+    "version": "1.0.0",
+    "description": "自动爬取网页开发者文档，扫描左侧链接并根据XPath保存内容",
+    "match": "*://*/*",
+    "grants": [
+      "GM_download",
+      "GM_xmlhttpRequest",
+      "GM_setClipboard",
+      "GM_registerMenuCommand"
+    ],
+    "requires": [
+      "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+    ],
+    "connect": [
+      "*"
+    ]
+  }
+}
