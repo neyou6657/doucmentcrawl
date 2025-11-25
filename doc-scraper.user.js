@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         开发者文档爬取工具
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
-// @description  自动爬取网页开发者文档，支持可视化元素选择器，扫描左侧链接并根据XPath保存内容
+// @version      1.2.0
+// @description  自动爬取网页开发者文档，支持可视化元素选择器，根据URL结构保存为ZIP文件夹
 // @author       You
 // @match        *://*/*
 // @grant        GM_download
@@ -195,7 +195,7 @@
         return scrapedData.links;
     }
 
-    // 提取页面内容
+    // 提取页面内容（简化版 - 只提取innerHTML和textContent）
     function extractPageContent(doc = document) {
         const content = {};
         
@@ -203,70 +203,13 @@
         const mainContent = findContentArea();
         
         // 提取HTML内容
-        content.html = mainContent ? mainContent.innerHTML : '';
+        content.innerHTML = mainContent ? mainContent.innerHTML : '';
         
         // 提取纯文本
-        content.text = mainContent ? mainContent.textContent.trim() : '';
+        content.textContent = mainContent ? mainContent.textContent.trim() : '';
         
-        // 提取标题
+        // 提取标题（用于文件名）
         content.title = doc.title;
-        
-        // 提取所有标题
-        content.headings = [];
-        const headings = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
-        headings.forEach(h => {
-            content.headings.push({
-                level: parseInt(h.tagName.substring(1)),
-                text: h.textContent.trim(),
-                id: h.id || ''
-            });
-        });
-        
-        // 提取代码块
-        content.codeBlocks = [];
-        const codeBlocks = doc.querySelectorAll('pre code, pre, code');
-        codeBlocks.forEach((block, index) => {
-            const codeText = block.textContent.trim();
-            if (codeText.length > 10) { // 过滤太短的代码
-                content.codeBlocks.push({
-                    index: index,
-                    language: block.className.match(/language-(\w+)/)?.[1] || 'unknown',
-                    code: codeText
-                });
-            }
-        });
-        
-        // 提取表格
-        content.tables = [];
-        const tables = doc.querySelectorAll('table');
-        tables.forEach((table, index) => {
-            const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent.trim());
-            const rows = Array.from(table.querySelectorAll('tr')).map(tr => {
-                return Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim());
-            });
-            content.tables.push({
-                index: index,
-                headers: headers,
-                rows: rows
-            });
-        });
-        
-        // 使用自定义XPath提取
-        content.xpathResults = {};
-        config.contentXPaths.forEach((xpath, index) => {
-            const elements = getAllElementsByXPath(xpath, doc);
-            if (elements.length > 0) {
-                content.xpathResults[`xpath_${index}`] = {
-                    xpath: xpath,
-                    count: elements.length,
-                    content: elements.map(el => ({
-                        tagName: el.tagName,
-                        text: el.textContent.trim().substring(0, 500),
-                        html: el.innerHTML.substring(0, 500)
-                    }))
-                };
-            }
-        });
         
         return content;
     }
@@ -736,7 +679,113 @@
         infoEl.innerHTML = html;
     }
 
-    // 导出数据为JSON
+    // 辅助函数：生成安全的文件路径
+    function generateSafePath(url) {
+        try {
+            const urlObj = new URL(url);
+            let path = urlObj.pathname;
+            
+            // 移除开头的斜杠
+            if (path.startsWith('/')) {
+                path = path.substring(1);
+            }
+            
+            // 如果路径为空或以斜杠结尾，使用index
+            if (!path || path.endsWith('/')) {
+                path += 'index';
+            }
+            
+            // 移除文件扩展名（如果有）
+            path = path.replace(/\.(html|htm|php|asp|jsp)$/i, '');
+            
+            // 替换不安全的字符
+            path = path.replace(/[^a-zA-Z0-9\-_\/]/g, '-');
+            
+            return path;
+        } catch (error) {
+            // 如果URL解析失败，使用时间戳
+            return `page-${Date.now()}`;
+        }
+    }
+
+    // 导出为ZIP文件（根据URL创建文件夹结构）
+    async function exportToZip() {
+        if (scrapedData.contents.length === 0) {
+            alert('没有可导出的内容！请先抓取页面。');
+            return;
+        }
+
+        const zip = new JSZip();
+        const urlObj = new URL(scrapedData.baseUrl);
+        const rootFolderName = urlObj.hostname.replace(/[^a-zA-Z0-9\-_]/g, '-');
+
+        // 为每个页面创建HTML和TXT文件
+        scrapedData.contents.forEach((page, index) => {
+            const safePath = generateSafePath(page.url);
+            
+            // 创建HTML文件
+            const htmlContent = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${page.content.title || 'Untitled'}</title>
+    <meta name="source-url" content="${page.url}">
+    <meta name="scraped-at" content="${page.scrapedAt}">
+</head>
+<body>
+${page.content.innerHTML}
+</body>
+</html>`;
+            
+            zip.file(`${rootFolderName}/${safePath}.html`, htmlContent);
+            
+            // 创建TXT文件
+            zip.file(`${rootFolderName}/${safePath}.txt`, page.content.textContent);
+            
+            console.log(`已添加到ZIP: ${safePath}`);
+        });
+
+        // 创建索引文件
+        let indexContent = `# 文档抓取结果\n\n`;
+        indexContent += `**基础URL:** ${scrapedData.baseUrl}\n`;
+        indexContent += `**抓取时间:** ${scrapedData.startTime}\n`;
+        indexContent += `**总页面数:** ${scrapedData.contents.length}\n\n`;
+        indexContent += `## 页面列表\n\n`;
+        
+        scrapedData.contents.forEach((page) => {
+            const safePath = generateSafePath(page.url);
+            indexContent += `- **${page.content.title || 'Untitled'}**\n`;
+            indexContent += `  - URL: ${page.url}\n`;
+            indexContent += `  - HTML: ${safePath}.html\n`;
+            indexContent += `  - TXT: ${safePath}.txt\n\n`;
+        });
+        
+        zip.file(`${rootFolderName}/INDEX.md`, indexContent);
+
+        // 生成ZIP文件
+        try {
+            const blob = await zip.generateAsync({ 
+                type: 'blob',
+                compression: 'DEFLATE',
+                compressionOptions: { level: 9 }
+            });
+            
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${rootFolderName}-${new Date().getTime()}.zip`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            console.log('ZIP文件生成成功！');
+        } catch (error) {
+            console.error('生成ZIP文件失败:', error);
+            alert('生成ZIP文件失败: ' + error.message);
+        }
+    }
+
+    // 导出数据为JSON（保留用于调试）
     function exportToJSON() {
         const dataStr = JSON.stringify(scrapedData, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
@@ -744,85 +793,6 @@
         const a = document.createElement('a');
         a.href = url;
         a.download = `doc-scraper-${new Date().getTime()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-    }
-
-    // 导出为Markdown
-    function exportToMarkdown() {
-        let markdown = `# 文档抓取结果\n\n`;
-        markdown += `**基础URL:** ${scrapedData.baseUrl}\n`;
-        markdown += `**抓取时间:** ${scrapedData.startTime}\n`;
-        markdown += `**总链接数:** ${scrapedData.links.length}\n`;
-        markdown += `**分类数:** ${Object.keys(scrapedData.categories).length}\n\n`;
-        
-        // 添加分类目录
-        markdown += `## 分类目录\n\n`;
-        for (const [category, links] of Object.entries(scrapedData.categories)) {
-            markdown += `### ${category}\n\n`;
-            links.forEach(link => {
-                markdown += `- [${link.text}](${link.url})\n`;
-            });
-            markdown += `\n`;
-        }
-        
-        // 添加内容
-        markdown += `## 页面内容\n\n`;
-        scrapedData.contents.forEach(page => {
-            markdown += `### ${page.content.title}\n\n`;
-            markdown += `**URL:** ${page.url}\n`;
-            markdown += `**分类:** ${page.category}\n\n`;
-            
-            if (page.content.headings.length > 0) {
-                markdown += `#### 标题结构\n\n`;
-                page.content.headings.forEach(h => {
-                    const indent = '  '.repeat(h.level - 1);
-                    markdown += `${indent}- ${h.text}\n`;
-                });
-                markdown += `\n`;
-            }
-            
-            if (page.content.codeBlocks.length > 0) {
-                markdown += `#### 代码示例\n\n`;
-                page.content.codeBlocks.forEach(cb => {
-                    markdown += `\`\`\`${cb.language}\n${cb.code}\n\`\`\`\n\n`;
-                });
-            }
-            
-            markdown += `---\n\n`;
-        });
-        
-        const blob = new Blob([markdown], { type: 'text/markdown' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `doc-scraper-${new Date().getTime()}.md`;
-        a.click();
-        URL.revokeObjectURL(url);
-    }
-
-    // 导出为CSV
-    function exportToCSV() {
-        let csv = 'URL,分类,链接文本,标题,内容长度,代码块数,标题数\n';
-        
-        scrapedData.contents.forEach(page => {
-            const row = [
-                page.url,
-                page.category,
-                page.linkText.replace(/"/g, '""'),
-                page.content.title.replace(/"/g, '""'),
-                page.content.text.length,
-                page.content.codeBlocks.length,
-                page.content.headings.length
-            ];
-            csv += row.map(field => `"${field}"`).join(',') + '\n';
-        });
-        
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `doc-scraper-${new Date().getTime()}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -892,14 +862,11 @@
             
             <div style="margin-bottom: 15px;">
                 <h4 style="margin: 10px 0; color: #555;">导出</h4>
+                <button id="export-zip" style="width: 100%; margin: 5px 0; padding: 10px; background: #FF5722; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" disabled>
+                    📦 导出 ZIP（推荐）
+                </button>
                 <button id="export-json" style="width: 100%; margin: 5px 0; padding: 8px; background: #9C27B0; color: white; border: none; border-radius: 4px; cursor: pointer;" disabled>
-                    导出 JSON
-                </button>
-                <button id="export-markdown" style="width: 100%; margin: 5px 0; padding: 8px; background: #009688; color: white; border: none; border-radius: 4px; cursor: pointer;" disabled>
-                    导出 Markdown
-                </button>
-                <button id="export-csv" style="width: 100%; margin: 5px 0; padding: 8px; background: #795548; color: white; border: none; border-radius: 4px; cursor: pointer;" disabled>
-                    导出 CSV
+                    导出 JSON（调试）
                 </button>
             </div>
             
@@ -951,9 +918,8 @@
             
             await scrapeAllPages(scrapedData.links);
             
+            document.getElementById('export-zip').disabled = false;
             document.getElementById('export-json').disabled = false;
-            document.getElementById('export-markdown').disabled = false;
-            document.getElementById('export-csv').disabled = false;
             document.getElementById('scrape-all').disabled = false;
             
             document.getElementById('doc-scraper-info').innerHTML = `
@@ -974,21 +940,17 @@
                 content: content
             });
             
+            document.getElementById('export-zip').disabled = false;
             document.getElementById('export-json').disabled = false;
-            document.getElementById('export-markdown').disabled = false;
-            document.getElementById('export-csv').disabled = false;
             
             document.getElementById('doc-scraper-info').innerHTML = `
                 ✅ 当前页抓取完成！<br>
-                标题: ${content.headings.length} 个<br>
-                代码块: ${content.codeBlocks.length} 个<br>
-                表格: ${content.tables.length} 个
+                标题: ${content.title}
             `;
         });
         
+        document.getElementById('export-zip').addEventListener('click', exportToZip);
         document.getElementById('export-json').addEventListener('click', exportToJSON);
-        document.getElementById('export-markdown').addEventListener('click', exportToMarkdown);
-        document.getElementById('export-csv').addEventListener('click', exportToCSV);
     }
 
     // 初始化
